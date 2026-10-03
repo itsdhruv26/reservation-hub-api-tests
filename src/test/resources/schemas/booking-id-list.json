@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Booking id list",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["bookingid"],
+    "properties": {
+      "bookingid": { "type": "integer", "minimum": 1 }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Product defects (API behaved incorrectly)",
+    "description": "An assertion about API behaviour failed. See BUGS.md for triage.",
+    "matchedStatuses": ["failed"]
+  },
+  {
+    "name": "Environment / test infrastructure problems",
+    "description": "The test could not reach a verdict: the API was unreachable, a precondition could not be set up, or the test itself errored. Not evidence of a product defect.",
+    "matchedStatuses": ["broken"]
+  }
+]

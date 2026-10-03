@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Create booking response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["bookingid", "booking"],
+  "properties": {
+    "bookingid": { "type": "integer", "minimum": 1 },
+    "booking": { "$ref": "booking.json#" }
+  }
+}
