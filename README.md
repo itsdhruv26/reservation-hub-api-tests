@@ -4,7 +4,7 @@ An automated safety net for the partner-facing Bookings API (create, read, amend
 with a negative total and check-out before check-in reached production.
 **Stack:** Java 17+, Maven, TestNG, REST Assured, JSON Schema, Allure.
 
-- **Test report:** [`report/index.html`](report/index.html) (opens in a browser, no server needed)
+- **Test report:** [view online](https://itsdhruv26.github.io/reservation-hub-api-tests/report/), or open [`report/index.html`](report/index.html) locally (no server needed)
 - **Bug report:** [`BUGS.md`](BUGS.md): 12 defects with severity and curl repros
 - **Latest run:** 75 tests, **33 pass, 42 fail**. Every failure is a real API defect logged in BUGS.md.
 
