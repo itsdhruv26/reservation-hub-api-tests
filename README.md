@@ -31,7 +31,7 @@ earlier runs. Each run also writes an Extent report to `test-output/SparkReport/
 | `src/main/java/common` | Generic framework: `SpecBuilder` (base URL, timeouts, retry, report filters), `RestResourceService` (the only class that sends requests), config and YAML loaders, assertions, TestNG listeners, Extent reporting |
 | `src/main/java/com/reservationhub` | `applicationapi` (one method per endpoint, no assertions) and `pojo` (request and response payloads) |
 | `src/main/resources` | `config/{env}.properties` (URLs, timeouts, retries), `yml/{env}.yml` (credentials), JSON schemas |
-| `src/test/java/com/reservationhub` | `controllers` (endpoint calls plus steps like `givenExistingBooking`), `requestbuilder` (valid unique bookings, deliberately broken payloads), `dataprovider`, `core` (`BaseTest`, cold-start check, cleanup, tokens), `testmodules` (the tests) |
+| `src/test/java/com/reservationhub` | `controllers` (endpoint calls plus one `verify...` scenario per test: builds the request, calls the API, asserts), `requestbuilder` (every request body and query: valid unique bookings, PATCH bodies, search filters, deliberately broken payloads), `dataprovider`, `core` (`BaseTest`, cold-start check, cleanup, tokens), `testmodules` (the tests: annotations plus a single controller call each) |
 | `TestNGFiles` | `qa/`: regression and smoke suites; `misc/`: one suite per test class |
 
 The environment is chosen with `-Denv` (default `qa`). Any config key can be overridden with `-D` or an

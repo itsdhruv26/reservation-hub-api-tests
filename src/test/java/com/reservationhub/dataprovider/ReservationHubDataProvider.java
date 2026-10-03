@@ -1,11 +1,11 @@
 package com.reservationhub.dataprovider;
 
+import com.reservationhub.requestbuilder.RequestBuilderAuth;
 import com.reservationhub.requestbuilder.RequestBuilderBooking;
+import com.reservationhub.requestbuilder.RequestBuilderPatchBooking;
+import com.reservationhub.core.tokenmanager.AuthScheme;
 import com.reservationhub.core.tokenmanager.BookingTokenManager;
-import com.reservationhub.pojo.auth.request.AuthReqPayload;
-import com.reservationhub.pojo.booking.BookingDates;
 import com.reservationhub.pojo.booking.BookingPayload;
-import com.reservationhub.pojo.patchbooking.request.PatchBookingReqPayload;
 import com.reservationhub.utilities.Named;
 import common.core.api.Auth;
 import common.core.utils.YamlReader;
@@ -25,8 +25,6 @@ import static com.reservationhub.utilities.Named.named;
  */
 public class ReservationHubDataProvider {
 
-    public enum AuthScheme { TOKEN_COOKIE, BASIC_AUTH }
-
     // ===================== AUTH =====================
 
     /** Each row: a readable label for the report, then the credentials to send. */
@@ -37,9 +35,9 @@ public class ReservationHubDataProvider {
         String username = user.get("username").toString();
         String password = user.get("password").toString();
         return new Object[][]{
-                {"wrong password", AuthReqPayload.of(username, invalid.get("wrong_password").toString())},
-                {"unknown user", AuthReqPayload.of(invalid.get("unknown_username").toString(), password)},
-                {"empty body", new AuthReqPayload()}};
+                {"wrong password", RequestBuilderAuth.genAuthPayload(username, invalid.get("wrong_password").toString())},
+                {"unknown user", RequestBuilderAuth.genAuthPayload(invalid.get("unknown_username").toString(), password)},
+                {"empty body", RequestBuilderAuth.genEmptyAuthPayload()}};
     }
 
     /** Every write method combined with every kind of bad credential: 3 x 3 = 9 rows. */
@@ -108,8 +106,8 @@ public class ReservationHubDataProvider {
     /** Each row: how to corrupt an otherwise valid booking, with a readable name for the report. */
     @DataProvider(name = "invalid_replacements")
     public static Object[][] invalidReplacements() {
-        UnaryOperator<BookingPayload> negativePrice = b -> RequestBuilderBooking.from(b).totalprice(-50).build();
-        UnaryOperator<BookingPayload> invertedDates = b -> RequestBuilderBooking.from(b).stayFrom(FUTURE_CHECKIN, FUTURE_CHECKIN.minusDays(2)).build();
+        UnaryOperator<BookingPayload> negativePrice = b -> RequestBuilderBooking.genReplacementWithPrice(b, -50);
+        UnaryOperator<BookingPayload> invertedDates = b -> RequestBuilderBooking.genReplacementWithStay(b, FUTURE_CHECKIN, FUTURE_CHECKIN.minusDays(2));
         return new Object[][]{
                 {named("negative total price", negativePrice)},
                 {named("check-out before check-in", invertedDates)}};
@@ -119,9 +117,8 @@ public class ReservationHubDataProvider {
     @DataProvider(name = "invalid_patches")
     public static Object[][] invalidPatches() {
         return new Object[][]{
-                {"negative total price", PatchBookingReqPayload.builder().totalprice(-1).build()},
-                {"check-out before check-in", PatchBookingReqPayload.builder()
-                        .bookingdates(BookingDates.of(FUTURE_CHECKIN, FUTURE_CHECKIN.minusDays(3))).build()}};
+                {"negative total price", RequestBuilderPatchBooking.genPricePatch(-1)},
+                {"check-out before check-in", RequestBuilderPatchBooking.genStayPatch(FUTURE_CHECKIN, FUTURE_CHECKIN.minusDays(3))}};
     }
 
     // ===================== NOT FOUND =====================
@@ -156,8 +153,8 @@ public class ReservationHubDataProvider {
     @DataProvider(name = "open_product_questions")
     public static Object[][] openProductQuestions() {
         return new Object[][]{
-                {"zero total price", RequestBuilderBooking.aBooking().totalprice(0).build()},
-                {"same-day check-in and check-out", RequestBuilderBooking.aBooking().stayFrom(FUTURE_CHECKIN, FUTURE_CHECKIN).build()}};
+                {"zero total price", RequestBuilderBooking.genBookingWithPrice(0)},
+                {"same-day check-in and check-out", RequestBuilderBooking.genBookingWithStay(FUTURE_CHECKIN, FUTURE_CHECKIN)}};
     }
 
     /** Each required field in turn, using dot notation for nested fields. */
@@ -187,9 +184,9 @@ public class ReservationHubDataProvider {
 
     /** PUT, PATCH and DELETE against a booking; the PATCH sets the given first name. */
     private static List<Named<BookingWriteCall>> writeCallList(String patchedFirstname) {
-        BookingWriteCall put = (controller, id, auth) -> controller.updateBooking(id, RequestBuilderBooking.aBooking().build(), auth);
+        BookingWriteCall put = (controller, id, auth) -> controller.updateBooking(id, RequestBuilderBooking.genBooking(), auth);
         BookingWriteCall patch = (controller, id, auth) -> controller.patchBooking(id,
-                PatchBookingReqPayload.builder().firstname(patchedFirstname).build(), auth);
+                RequestBuilderPatchBooking.genFirstnamePatch(patchedFirstname), auth);
         BookingWriteCall delete = (controller, id, auth) -> controller.deleteBooking(id, auth);
         return List.of(named("PUT", put), named("PATCH", patch), named("DELETE", delete));
     }

@@ -8,9 +8,18 @@ public class RequestBuilderAuth {
 
     /** Credentials of a user from USERS in yml/{env}.yml. */
     public static AuthReqPayload genAuthPayload(Map<String, Object> userDetails) {
+        return genAuthPayload(userDetails.get("username").toString(), userDetails.get("password").toString());
+    }
+
+    public static AuthReqPayload genAuthPayload(String username, String password) {
         return AuthReqPayload.builder()
-                .username(userDetails.get("username").toString())
-                .password(userDetails.get("password").toString())
+                .username(username)
+                .password(password)
                 .build();
+    }
+
+    /** Null fields are omitted, so this is sent as an empty JSON object. */
+    public static AuthReqPayload genEmptyAuthPayload() {
+        return new AuthReqPayload();
     }
 }

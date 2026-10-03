@@ -1,6 +1,7 @@
 package com.reservationhub.dataprovider;
 
 import com.reservationhub.controllers.apicontroller.BookingApiController;
+import com.reservationhub.core.tokenmanager.BookingTokenManager;
 import common.core.api.Auth;
 import io.restassured.response.Response;
 
@@ -9,4 +10,9 @@ import io.restassured.response.Response;
 public interface BookingWriteCall {
 
     Response send(BookingApiController controller, int bookingId, Auth auth);
+
+    /** Sent with valid token credentials, as a partner would. */
+    default Response send(BookingApiController controller, int bookingId) {
+        return send(controller, bookingId, BookingTokenManager.getTokenAuth());
+    }
 }

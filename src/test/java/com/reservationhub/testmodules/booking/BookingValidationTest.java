@@ -1,11 +1,8 @@
 package com.reservationhub.testmodules.booking;
 
-import com.reservationhub.requestbuilder.RequestBuilderBooking;
 import com.reservationhub.core.BaseTest;
 import com.reservationhub.dataprovider.ReservationHubDataProvider;
-import com.reservationhub.pojo.booking.BookingDates;
 import com.reservationhub.pojo.booking.BookingPayload;
-import com.reservationhub.pojo.createbooking.response.CreateBookingRespPayload;
 import io.qameta.allure.Description;
 import io.qameta.allure.Epic;
 import io.qameta.allure.Feature;
@@ -13,13 +10,9 @@ import io.qameta.allure.Issue;
 import io.qameta.allure.Severity;
 import io.qameta.allure.SeverityLevel;
 import io.qameta.allure.Story;
-import io.restassured.response.Response;
 import org.testng.annotations.Test;
 
-import static com.reservationhub.requestbuilder.RequestBuilderBooking.FUTURE_CHECKIN;
 import static com.reservationhub.utilities.ReservationHubConstants.KNOWN_DEFECT;
-import static common.core.utils.Assertions.assertStatusCode;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Input validation on POST /booking. Every case asserts what a correct API must do (reject with 400),
@@ -36,12 +29,7 @@ public class BookingValidationTest extends BaseTest {
     @Severity(SeverityLevel.BLOCKER)
     @Description("Reproduces the escalated incident exactly: one booking that is invalid on both price and dates.")
     public void incidentBookingIsRejected() {
-        BookingPayload incident = RequestBuilderBooking.aBooking()
-                .totalprice(-100)
-                .stayFrom(FUTURE_CHECKIN, FUTURE_CHECKIN.minusDays(5))
-                .build();
-
-        assertRejected(bookingController.createBooking(incident), "negative total price and check-out before check-in");
+        bookingController.verifyIncidentBookingRejected();
     }
 
     @Test(description = "Negative total price is rejected",
@@ -50,7 +38,7 @@ public class BookingValidationTest extends BaseTest {
     @Story("Price rules")
     @Severity(SeverityLevel.CRITICAL)
     public void negativePriceIsRejected(int price) {
-        assertRejected(bookingController.createBooking(RequestBuilderBooking.aBooking().totalprice(price).build()), "totalprice " + price);
+        bookingController.verifyNegativePriceRejected(price);
     }
 
     @Test(description = "Invalid stay dates are rejected",
@@ -60,24 +48,14 @@ public class BookingValidationTest extends BaseTest {
     @Story("Date rules")
     @Severity(SeverityLevel.CRITICAL)
     public void invalidDatesAreRejected(String scenario, String checkin, String checkout) {
-        BookingPayload booking = RequestBuilderBooking.aBooking().bookingdates(new BookingDates(checkin, checkout)).build();
-
-        assertRejected(bookingController.createBooking(booking), scenario);
+        bookingController.verifyInvalidDatesRejected(scenario, checkin, checkout);
     }
 
     @Test(description = "Smallest valid values are accepted: price 1, one-night stay")
     @Story("Boundaries")
     @Severity(SeverityLevel.CRITICAL)
     public void minimumValidBookingIsAccepted() {
-        BookingPayload booking = RequestBuilderBooking.aBooking()
-                .totalprice(1)
-                .stayFrom(FUTURE_CHECKIN, FUTURE_CHECKIN.plusDays(1))
-                .build();
-
-        Response response = bookingController.createBooking(booking);
-
-        // Guards the other side of the boundary: tightening validation must not reject legitimate bookings.
-        assertStatusCode(response, 200, "The smallest legitimate booking must still be accepted");
+        bookingController.verifyMinimumValidBookingAccepted();
     }
 
     /**
@@ -89,12 +67,7 @@ public class BookingValidationTest extends BaseTest {
     @Story("Boundaries")
     @Severity(SeverityLevel.NORMAL)
     public void openProductQuestionsArePinned(String scenario, BookingPayload booking) {
-        Response response = bookingController.createBooking(booking);
-
-        assertStatusCode(response, 200, "Booking with " + scenario + " is currently allowed (pending a product decision)");
-        assertThat(bookingController.fetchBooking(response.as(CreateBookingRespPayload.class).getBookingid()))
-                .as("If accepted, it must be stored exactly as sent, not silently altered")
-                .isEqualTo(booking);
+        bookingController.verifyAcceptedAndStoredAsSent(scenario, booking);
     }
 
     @Test(description = "Missing required field is rejected with 400",
@@ -103,8 +76,7 @@ public class BookingValidationTest extends BaseTest {
     @Story("Required fields")
     @Severity(SeverityLevel.NORMAL)
     public void missingRequiredFieldIsRejected(String field) {
-        assertRejected(bookingController.createBooking(
-                RequestBuilderBooking.genPayloadWithout(RequestBuilderBooking.aBooking().build(), field)), "missing " + field);
+        bookingController.verifyMissingFieldRejected(field);
     }
 
     @Test(description = "Wrongly typed or blank field is rejected, not coerced",
@@ -114,8 +86,7 @@ public class BookingValidationTest extends BaseTest {
     @Story("Field types")
     @Severity(SeverityLevel.CRITICAL)
     public void wrongTypeIsRejected(String field, Object value) {
-        assertRejected(bookingController.createBooking(
-                RequestBuilderBooking.genPayloadWith(RequestBuilderBooking.aBooking().build(), field, value)), field + " = " + value);
+        bookingController.verifyWrongTypeRejected(field, value);
     }
 
     @Test(description = "Empty or non-object body is rejected with 400",
@@ -124,17 +95,13 @@ public class BookingValidationTest extends BaseTest {
     @Story("Request body")
     @Severity(SeverityLevel.NORMAL)
     public void emptyBodyIsRejected(String body) {
-        assertRejected(bookingController.createBooking(body), "body " + body);
+        bookingController.verifyEmptyBodyRejected(body);
     }
 
     @Test(description = "Malformed JSON is rejected with 400")
     @Story("Request body")
     @Severity(SeverityLevel.NORMAL)
     public void malformedJsonIsRejected() {
-        assertRejected(bookingController.createBooking("{\"firstname\": \"Jim\""), "truncated JSON");
-    }
-
-    private void assertRejected(Response response, String what) {
-        assertStatusCode(response, 400, "Booking with " + what + " should be rejected as a client error");
+        bookingController.verifyMalformedJsonRejected();
     }
 }
