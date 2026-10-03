@@ -20,15 +20,20 @@
         <jackson.version>2.18.1</jackson.version>
         <assertj.version>3.26.3</assertj.version>
         <lombok.version>1.18.42</lombok.version>
+        <extentreports.version>5.1.2</extentreports.version>
+        <snakeyaml.version>2.3</snakeyaml.version>
 
         <!-- Locally, failing tests are findings and the report should still be generated.
              A CI gate flips this with -Dmaven.test.failure.ignore=false. -->
         <maven.test.failure.ignore>true</maven.test.failure.ignore>
 
+        <!-- Environment: selects src/main/resources/config/{env}.properties and yml/{env}.yml. Override with -Denv=... -->
+        <env>qa</env>
+        <!-- Suite to run: the full regression by default, or e.g. -DSuiteFile=TestNGFiles/misc/AuthTest.xml -->
+        <SuiteFile>TestNGFiles/qa/booking_regression.xml</SuiteFile>
         <!-- Override on the command line, e.g. -Dgroups=smoke or -DexcludedGroups=known-defect -->
         <groups></groups>
         <excludedGroups></excludedGroups>
-        <suite.file>testng.xml</suite.file>
     </properties>
 
     <dependencyManagement>
@@ -48,19 +53,16 @@
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <version>${rest-assured.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>json-schema-validator</artifactId>
             <version>${rest-assured.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -72,13 +74,11 @@
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>${testng.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.qameta.allure</groupId>
@@ -88,7 +88,16 @@
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-rest-assured</artifactId>
-            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.aventstack</groupId>
+            <artifactId>extentreports</artifactId>
+            <version>${extentreports.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -167,13 +176,14 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
                 <configuration>
-                    <!-- Which suite file to run; override with -Dsuite.file=other.xml -->
+                    <!-- Which suite file to run; override with -DSuiteFile=TestNGFiles/misc/AuthTest.xml -->
                     <suiteXmlFiles>
-                        <suiteXmlFile>${suite.file}</suiteXmlFile>
+                        <suiteXmlFile>${SuiteFile}</suiteXmlFile>
                     </suiteXmlFiles>
                     <groups>${groups}</groups>
                     <excludedGroups>${excludedGroups}</excludedGroups>
                     <systemPropertyVariables>
+                        <env>${env}</env>
                         <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
                     </systemPropertyVariables>
                 </configuration>

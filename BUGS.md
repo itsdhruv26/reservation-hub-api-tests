@@ -242,7 +242,7 @@ curl -s "https://restful-booker.herokuapp.com/booking?firstname=$NAME&checkout=2
 | `checkout=2031-03-14` | included | **excluded** |
 | `checkout=2031-03-16` | excluded | **included**: the filter behaves as "on or before" |
 
-**Tests:** `GetBookingTest.dateFilterBoundary`
+**Tests:** `GetBookingTest.dateFilterBoundaryKnownDefect`
 
 ---
 

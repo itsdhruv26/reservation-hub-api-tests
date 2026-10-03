@@ -1,0 +1,45 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!--
+  Full regression suite (the default -DSuiteFile). Subsets: -Dgroups=smoke or -DexcludedGroups=known-defect.
+  Runs sequentially to be polite to a free shared sandbox.
+-->
+<suite name="Reservation Hub Bookings API Regression" verbose="1">
+
+    <listeners>
+        <!-- Shuffles test order on every run so hidden dependencies between tests show up early. -->
+        <listener class-name="common.listeners.RandomOrderInterceptor"/>
+        <!-- Reruns a test once if it ends broken (timeout, failed setup); failed assertions are never rerun. -->
+        <listener class-name="common.listeners.RetryBrokenTests"/>
+    </listeners>
+
+    <test name="Health">
+        <classes>
+            <class name="com.reservationhub.testmodules.health.HealthCheckTest"/>
+        </classes>
+    </test>
+
+    <test name="Booking Journey and CRUD">
+        <classes>
+            <class name="com.reservationhub.testmodules.booking.BookingLifecycleTest"/>
+            <class name="com.reservationhub.testmodules.booking.CreateBookingTest"/>
+            <class name="com.reservationhub.testmodules.booking.GetBookingTest"/>
+            <class name="com.reservationhub.testmodules.booking.UpdateBookingTest"/>
+            <class name="com.reservationhub.testmodules.booking.PatchBookingTest"/>
+            <class name="com.reservationhub.testmodules.booking.DeleteBookingTest"/>
+        </classes>
+    </test>
+
+    <test name="Auth, Validation and Error Handling">
+        <classes>
+            <class name="com.reservationhub.testmodules.auth.AuthTest"/>
+            <class name="com.reservationhub.testmodules.booking.BookingValidationTest"/>
+            <class name="com.reservationhub.testmodules.booking.NonExistentBookingTest"/>
+        </classes>
+    </test>
+
+    <test name="Performance Smoke">
+        <classes>
+            <class name="com.reservationhub.testmodules.performance.PerformanceSmokeTest"/>
+        </classes>
+    </test>
+</suite>

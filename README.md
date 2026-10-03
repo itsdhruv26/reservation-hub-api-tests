@@ -2,7 +2,7 @@
 
 An automated safety net for the partner-facing Bookings API (create, read, amend, cancel), built after a booking
 with a negative total and check-out before check-in reached production.
-**Stack:** Java 17+, Maven, TestNG, REST Assured, JSON Schema, Allure.
+**Stack:** Java 17+, Maven, TestNG, REST Assured, JSON Schema, Allure (plus Extent for local runs).
 
 - **Test report:** [view online](https://itsdhruv26.github.io/reservation-hub-api-tests/report/), or open [`report/index.html`](report/index.html) locally (no server needed)
 - **Bug report:** [`BUGS.md`](BUGS.md): 12 defects with severity and curl repros
@@ -13,15 +13,29 @@ with a negative total and check-out before check-in reached production.
 Needs JDK 17+ (`mvn -v` shows the JDK Maven uses) and, in an IDE, the Lombok plugin.
 
 ```bash
-mvn test                                    # full suite, then: mvn allure:report
-mvn test -Dgroups=smoke                     # 4-test gate: is the core journey alive?
-mvn test -DexcludedGroups=known-defect -Dmaven.test.failure.ignore=false   # green CI gate
-mvn test -Dbase.url=https://staging.example.com                            # override any config key
+mvn clean test                                                # full regression (TestNGFiles/qa/booking_regression.xml)
+mvn allure:report                                             # rebuild report/index.html from that run
+mvn clean test -DSuiteFile=TestNGFiles/qa/booking_smoke.xml   # 4-test gate: is the core journey alive?
+mvn clean test -DSuiteFile=TestNGFiles/misc/AuthTest.xml      # one test class
+mvn clean test -DexcludedGroups=known-defect -Dmaven.test.failure.ignore=false   # green CI gate
+mvn clean test -Denv=qa -DbaseUrl=https://staging.example.com # pick an environment, override any config key
 ```
 
-Config (base URL, credentials, timeouts) lives in `config.properties`; any key can be overridden with `-D` or an
-environment variable. Request logic (`controller/`, `http/`), test data (`builder/`, `data/`) and tests (`tests/`)
-are kept separate. Maven runs the classes listed in [`testng.xml`](testng.xml).
+Keep the `clean`: Allure reads every result in `target/allure-results`, so a report built without it mixes in
+earlier runs. Each run also writes an Extent report to `test-output/SparkReport/Index.html`.
+
+## Project layout
+
+| Where | What |
+|---|---|
+| `src/main/java/common` | Generic framework: `SpecBuilder` (base URL, timeouts, retry, report filters), `RestResourceService` (the only class that sends requests), config and YAML loaders, assertions, TestNG listeners, Extent reporting |
+| `src/main/java/com/reservationhub` | `applicationapi` (one method per endpoint, no assertions) and `pojo` (request and response payloads) |
+| `src/main/resources` | `config/{env}.properties` (URLs, timeouts, retries), `yml/{env}.yml` (credentials), JSON schemas |
+| `src/test/java/com/reservationhub` | `controllers` (endpoint calls plus steps like `givenExistingBooking`), `requestbuilder` (valid unique bookings, deliberately broken payloads), `dataprovider`, `core` (`BaseTest`, cold-start check, cleanup, tokens), `testmodules` (the tests) |
+| `TestNGFiles` | `qa/`: regression and smoke suites; `misc/`: one suite per test class |
+
+The environment is chosen with `-Denv` (default `qa`). Any config key can be overridden with `-D` or an
+environment variable in upper snake case (`baseUrl` → `BASE_URL`).
 
 ## Test strategy
 
@@ -35,7 +49,7 @@ are kept separate. Maven runs the classes listed in [`testng.xml`](testng.xml).
 4. **Contract:** JSON Schema on success responses, documented filter semantics, status codes.
 
 **Tests assert what a correct API should do.** Where the API is wrong, the test fails, is in the `known-defect`
-group and links to its BUGS.md entry. Excluding that group gives a green gate that still catches *new*
+group (a filterable tag in the report) and links to its BUGS.md entry. Excluding that group gives a green gate that still catches *new*
 regressions. Boundaries are data-driven and tested from both sides: price -1 is rejected, price 1 and a
 one-night stay must still be accepted. In the report, product defects show as *failed* and setup problems as
 *broken*, so "the API is wrong" can't be confused with "the test couldn't run".
@@ -57,6 +71,9 @@ today's behaviour (accepted, stored as sent) rather than calling them bugs.
   with one clear message instead of 70 timeouts.
 - **Narrow retries:** only 502/503/504 and dropped connections, only on idempotent calls. Never `500` (a real
   defect here) and never `POST /booking` (a retry could double-book).
+- **Broken tests get one rerun.** A test that ends with anything but a failed assertion (a read timeout, a
+  precondition the sandbox couldn't satisfy) is rerun once, and the report shows the retry. A failed assertion
+  is a finding and is never rerun, so this can't hide a defect.
 - **Fresh token per test**, so the 10-minute reset can't leave a stale one.
 
 ## Known limitations

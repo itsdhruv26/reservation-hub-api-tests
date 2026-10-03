@@ -1,0 +1,17 @@
+# ═══════════════════════════════════════════════════
+# QA test data. Selected with -Denv=qa; read with YamlReader, e.g.
+# YamlReader.getYamlValues("USERS.admin")
+# ═══════════════════════════════════════════════════
+
+# Users that can authenticate. config/qa.properties names the one used for writes (authUser).
+# These are the sandbox's publicly documented credentials, not secrets.
+USERS:
+  admin:
+    username: admin
+    password: password123
+
+# Values that look like credentials but must be rejected.
+INVALID_CREDENTIALS:
+  unknown_username: nobody
+  wrong_password: not-the-password
+  invalid_token: not-a-real-token

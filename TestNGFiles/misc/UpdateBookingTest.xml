@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="UpdateBookingTest Suite">
+    <listeners>
+        <listener class-name="common.listeners.RetryBrokenTests"/>
+    </listeners>
+    <test name="UpdateBookingTest">
+        <classes>
+            <class name="com.reservationhub.testmodules.booking.UpdateBookingTest"/>
+        </classes>
+    </test>
+</suite>

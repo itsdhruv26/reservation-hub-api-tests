@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="PerformanceSmokeTest Suite">
+    <listeners>
+        <listener class-name="common.listeners.RetryBrokenTests"/>
+    </listeners>
+    <test name="PerformanceSmokeTest">
+        <classes>
+            <class name="com.reservationhub.testmodules.performance.PerformanceSmokeTest"/>
+        </classes>
+    </test>
+</suite>
