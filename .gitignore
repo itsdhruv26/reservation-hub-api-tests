@@ -1,0 +1,10 @@
+target/
+.allure/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# allure-maven also writes site-skin assets next to the report; only the single-file report is needed
+report/*
+!report/index.html

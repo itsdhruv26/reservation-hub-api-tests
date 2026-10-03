@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.reservationhub</groupId>
+    <artifactId>bookings-api-tests</artifactId>
+    <version>1.0.0</version>
+    <name>Reservation Hub - Bookings API regression suite</name>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <rest-assured.version>5.5.0</rest-assured.version>
+        <testng.version>7.12.0</testng.version>
+        <allure.version>2.29.0</allure.version>
+        <allure.cli.version>2.32.0</allure.cli.version>
+        <jackson.version>2.18.1</jackson.version>
+        <assertj.version>3.26.3</assertj.version>
+        <lombok.version>1.18.42</lombok.version>
+
+        <!-- Locally, failing tests are findings and the report should still be generated.
+             A CI gate flips this with -Dmaven.test.failure.ignore=false. -->
+        <maven.test.failure.ignore>true</maven.test.failure.ignore>
+
+        <!-- Override on the command line, e.g. -Dgroups=smoke or -DexcludedGroups=known-defect -->
+        <groups></groups>
+        <excludedGroups></excludedGroups>
+        <suite.file>testng.xml</suite.file>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-bom</artifactId>
+                <version>${allure.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.16</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Fail fast with a readable message on an old JDK, instead of the compiler's
+                 "release version 17 not supported". -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>require-jdk-17</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[17,)</version>
+                                    <message>This project needs JDK 17 or newer, but Maven is running on ${java.version}. Point JAVA_HOME at a JDK 17+ install (check with: mvn -v).</message>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Lombok generates the POJO boilerplate. JDK 23+ no longer runs annotation processors found
+                 on the classpath, so the processor is declared explicitly. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <!-- Allure categories must sit next to the raw results to be picked up by the report generator. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-allure-categories</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/allure-results</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/test/resources/allure</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration>
+                    <!-- Which suite file to run; override with -Dsuite.file=other.xml -->
+                    <suiteXmlFiles>
+                        <suiteXmlFile>${suite.file}</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <groups>${groups}</groups>
+                    <excludedGroups>${excludedGroups}</excludedGroups>
+                    <systemPropertyVariables>
+                        <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>2.15.2</version>
+                <configuration>
+                    <reportVersion>${allure.cli.version}</reportVersion>
+                    <resultsDirectory>allure-results</resultsDirectory>
+                    <!-- One self-contained HTML file, committed under report/ so reviewers can open it without a server. -->
+                    <singleFile>true</singleFile>
+                    <reportDirectory>${project.basedir}/report</reportDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
